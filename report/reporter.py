@@ -6,11 +6,9 @@ from telethon import TelegramClient, functions, types, errors
 # Color setup
 rd, gn, lgn, lrd, k = '\033[00;31m', '\033[00;32m', '\033[01;32m', '\033[01;31m', '\033[90m'
 
-# Clear screen
 def clear():
     os.system("cls" if platform.system() == "Windows" else "clear")
 
-# Show report reasons
 def show_methods():
     reasons = [
         "Spam", "Other", "Violence", "Pornography",
@@ -20,36 +18,41 @@ def show_methods():
     for i, reason in enumerate(reasons, 1):
         print(f"{lrd}[{lgn}{i}{lrd}] {gn}Report {reason}")
 
-# Main reporter
 async def main():
     clear()
-    print(f"{lrd}[{lgn}+{lrd}] {gn}Telegram Channel Reporter Updated")
+    print(f"{lrd}[{lgn}+{lrd}] {gn}Telegram Group Reporter (Public/Private Supported)")
 
     api_id = int(input(f"{lrd}[{lgn}+{lrd}] {gn}Enter API ID: {k}"))
     api_hash = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter API Hash: {k}")
-    phone = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter your phone number (+91xxxx): {k}")
-    password = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter 2FA password (if set, else press Enter): {k}")
-    channel = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter @channel username: {k}")
-    
+    phone = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter phone (+91xxxx): {k}")
+    password = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter 2FA password (if any, else press Enter): {k}")
+    target = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter @group username or invite link or -100GroupID: {k}")
+
     show_methods()
-    method = input(f"{lrd}[{lgn}?{lrd}] {gn}Select report reason (1–9): {k}")
+    method = input(f"{lrd}[{lgn}?{lrd}] {gn}Select reason (1–9): {k}")
     count = int(input(f"{lrd}[{lgn}+{lrd}] {gn}How many times to report?: {k}"))
 
-    session = f"session_{phone.replace('+','')}"
+    session = f"group_session_{phone.replace('+','')}"
     client = TelegramClient(session, api_id, api_hash)
 
     try:
         await client.start(phone=phone, password=password)
-        entity = await client.get_entity(channel)
 
-        # Get recent message IDs to report
+        # Convert target to entity
+        try:
+            if target.startswith("https://t.me/"):
+                target = target.split("/")[-1]
+            entity = await client.get_entity(target)
+        except:
+            print(f"{rd}❌ Could not find or join the group.")
+            return
+
         messages = await client.get_messages(entity, limit=3)
         message_ids = [msg.id for msg in messages]
         if not message_ids:
-            print(f"{rd}No messages found in channel.")
+            print(f"{rd}❌ No recent messages to report.")
             return
 
-        # Setup reasons
         reasons = {
             "1": types.InputReportReasonSpam(),
             "2": types.InputReportReasonOther(),
@@ -64,28 +67,28 @@ async def main():
 
         reason = reasons.get(method)
         if not reason:
-            print(f"{rd}Invalid reason selected.")
+            print(f"{rd}❌ Invalid report reason.")
             return
 
-        # Start reporting loop
-        print(f"{gn}Reporting messages in @{channel}...")
+        print(f"{gn}📣 Starting report to group: {target}")
         for i in range(count):
             await client(functions.messages.ReportRequest(
                 peer=entity,
                 id=message_ids,
                 reason=reason,
-                message="Reported via channel abuse script."
+                message="Inappropriate content reported by user."
             ))
-            print(f"{lgn}[✓] Report {i + 1} sent")
-            await asyncio.sleep(30)  # wait to avoid spam ban
+            print(f"{lgn}[✓] Report {i + 1} sent.")
+            await asyncio.sleep(30)  # Delay to avoid ban
 
-        print(f"\n{lrd}[{lgn}✓{lrd}] {gn}All reports finished safely.")
+        print(f"\n{lrd}[{lgn}✓{lrd}] {gn}All reports completed successfully.")
+
     except errors.PhoneNumberBannedError:
-        print(f"{rd}This phone number is banned from Telegram API.")
+        print(f"{rd}⚠️ This phone number is banned from Telegram API.")
     except Exception as e:
-        print(f"{rd}Error: {e}")
+        print(f"{rd}⚠️ Error: {e}")
     finally:
         await client.disconnect()
 
-# Run script
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
