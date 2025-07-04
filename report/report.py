@@ -1,195 +1,91 @@
-import os,time,platform
-try:from telethon.sync import TelegramClient
-except:os.system("pip install telethon")
-from telethon.tl import types
-from telethon import functions
+import asyncio
+import os
+import platform
+from telethon import TelegramClient, functions, types, errors
 from prettytable import PrettyTable
-def re(text):
-    for char in text:
-        print(char, end='', flush=True)
-        time.sleep(0.001)  
-        
+
+# Terminal Color Setup
 rd, gn, lgn, yw, lrd, be, pe = '\033[00;31m', '\033[00;32m', '\033[01;32m', '\033[01;33m', '\033[01;31m', '\033[94m', '\033[01;35m'
-cn, k,g = '\033[00;36m', '\033[90m','\033[38;5;130m'
-print (f"{lrd}")
-t = PrettyTable([f'{cn}Number{lrd}',f'{cn}Method{lrd}'])
-t.add_row([f'{lgn}1{lrd}',f'{gn}Report Spam{lrd}'])
-t.add_row([f'{lgn}2{lrd}',f'{gn}Report Pornography{lrd}'])
-t.add_row([f'{lgn}3{lrd}',f'{gn}Report Violence{lrd}'])
-t.add_row([f'{lgn}4{lrd}',f'{gn}Report Child Abuse{lrd}'])
-t.add_row([f'{lgn}5{lrd}',f'{gn}Report Other{lrd}'])
-t.add_row([f'{lgn}6{lrd}',f'{gn}Report CopyRith{lrd}'])
-t.add_row([f'{lgn}7{lrd}',f'{gn}Report Fake{lrd}'])
-t.add_row([f'{lgn}8{lrd}',f'{gn}Report Geo Irrelevant{lrd}'])
-t.add_row([f'{lgn}9{lrd}',f'{gn}Report Illegal Drugs{lrd}'])
-t.add_row([f'{lgn}10{lrd}',f'{gn}Report Personal Details{lrd}'])
+cn, k, g = '\033[00;36m', '\033[90m', '\033[38;5;130m'
+
+# Display report options table
+def show_menu():
+    t = PrettyTable([f'{cn}Number{lrd}', f'{cn}Report Type{lrd}'])
+    reasons = [
+        "Spam", "Pornography", "Violence", "Child Abuse", "Other",
+        "Copyright", "Fake", "Geo Irrelevant", "Illegal Drugs", "Personal Details"
+    ]
+    for i, reason in enumerate(reasons, 1):
+        t.add_row([f'{lgn}{i}{lrd}', f'{gn}Report {reason}{lrd}'])
+    print(t)
+
+# Clear terminal screen
 def clear():
-    if 'Windows' in platform.uname():
-        try:from colorama import init
-        except:os.system("pip install colorama")
-        init()
-        os.system("cls")
-    elif 'Windows' not in platform.uname():
-        os.system("clear")
+    os.system("cls" if platform.system() == "Windows" else "clear")
 
-clear()
-re(f"""{g}
-  _____      __      _   _________     ____    
- (_   _)    /  \    / ) (_   _____)   / __ \   
-   | |     / /\ \  / /    ) (___     / /  \ \  
-   | |     ) ) ) ) ) )   (   ___)   ( ()  () ) 
-   | |    ( ( ( ( ( (     ) (       ( ()  () ) 
-  _| |__  / /  \ \/ /    (   )       \ \__/ /  
- /_____( (_/    \__/      \_/         \____/
-""")
-account = f"""{k}
-                                                                 
-                    .---:                :---.                   
-               .=++*+=+#+                +#*=+*++=.              
-             =#*+++=++-=#                #==++=+++*#=            
-           =%++**==**-*+#=   {rd}Reporter{k}   =#+*-**==**++%=          
-         .#*+***=+**-*+##+.   {gn}Account{k}   .+*%+*-**+=***+*%:        
-        -%=****-***=+*=%@+=            =+@%=*+=***-****=%-       
-       -%=****-****-***++@#.          .#@++***-****-****=%-      
-      .%=****=+***+=****-=%@=*:=#%=.*=@%=-****=+***+=****=%.     
-      *+*****-****=*****-+=#%*%#@@#%*%#=+-*****=****-*****=#     
-     .%=****=+****-*-..::%@@@+@@@@@@*@@@%-:..-*-****+=****=#.    
-     ++*****-*+-:::.    @@@@@*%@@@@%*@@@@@    .:::-+*-*****++    
-     *=***++-=         :@@@@@@##@@##@@@@@@:         =-++***=#    
-     *=+:               %@@%#@@@##@@@##@@%               :+=#    
-     +-            .... =@@@+@@@@@@@@+@@@= ....            -*    
-     =          *@@@@@@@+@@@=@@@@@@@@=@@@+@@@@@@@*          =    
-               :@@@@@@@@+@@%##%@@@@@###@@+@@@@@@@@:              
-               .@@@@##%@+@@%*@@@@@@@@*%@@+@%##@@@@.              
-                .*@@@@%#*+@@#%@@@@@@%#@@+*#%@@@@#:               
-                  .=#@@@@*%@@-*+--+*-@@%*@@@@#=.                 
-                      :=*@+@@:.    .-@@+@#=:                     
-                          #*@=      =@*#                         
-                         :%=@+      +@=%:                        
-                       +****%*+=  =+*%****+                      
-                        .-.=-        -=.-.                       
+# Main report runner
+async def main():
+    clear()
+    print(f"{lrd}[{lgn}+{lrd}] {gn}Telegram Mass Reporter — Updated Version\n")
 
+    api_id = int(input(f"{lrd}[{lgn}+{lrd}] {gn}Enter API ID: {g}"))
+    api_hash = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter API Hash: {g}")
+    phone = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter phone number (+91xxxxxxxxxx): {g}")
+    password = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter 2FA password (if any): {g}")
+    
+    show_menu()
+    method = input(f"{lrd}[{lgn}?{lrd}] {gn}Choose a report type (1-10): {g}")
+    target = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter target @username or user ID: {g}")
+    count = int(input(f"{lrd}[{lgn}+{lrd}] {gn}How many times to report: {g}"))
 
-	{lrd}[{lgn}+{lrd}] {gn}Channel : {lgn}@Esfelurm	
-			"""	 
-class TelegramReporter:
-    def __init__(self):
-        self.api_id = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter Api id account: {g}")
-        self.api_hash = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter Api hash account: {g}")
-        self.phone_number = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter phone account:{g} ")
-        self.password = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter password account: (If you don't have it, enter it) {g}")
-        clear()
-        re(account)
-        print (f"{lrd}")
-        print (t)
-        self.method = input(f"{lrd}[{lgn}?{lrd}] {gn}Choose a method : {k}")
-        self.scammer_id = input(f"{lrd}[{lgn}+{lrd}] {gn}Enter Username of the target: {k}")
-        self.number = input(f"{lrd}[{lgn}+{lrd}] {gn}Number of reports: {k}")
+    session_name = f"session_{phone.replace('+', '')}"
 
-    def report_spam(self):
-        with TelegramClient('reporter', self.api_id, self.api_hash) as client:
-            client.start(self.phone_number, self.password)
+    try:
+        client = TelegramClient(session_name, api_id, api_hash)
+        await client.start(phone=phone, password=password)
 
-            try:
-                user = client.get_entity(self.scammer_id)
-                scammer_input_peer = types.InputPeerUser(user_id=user.id, access_hash=user.access_hash)
-            except ValueError:
-                print(f'{lrd}[{rd}!{lrd}] {k}No such person was found')
-                client.disconnect()
-                return
-            if self.method == "1":
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-                peer=scammer_input_peer,
-                reason=types.InputReportReasonSpam(),
-                message=''
+        user = await client.get_entity(target)
+        peer = types.InputPeerUser(user_id=user.id, access_hash=user.access_hash)
+
+        # Define report reasons
+        reasons = {
+            "1": types.InputReportReasonSpam(),
+            "2": types.InputReportReasonPornography(),
+            "3": types.InputReportReasonViolence(),
+            "4": types.InputReportReasonChildAbuse(),
+            "5": types.InputReportReasonOther(),
+            "6": types.InputReportReasonCopyright(),
+            "7": types.InputReportReasonFake(),
+            "8": types.InputReportReasonGeoIrrelevant(),
+            "9": types.InputReportReasonIllegalDrugs(),
+            "10": types.InputReportReasonPersonalDetails(),
+        }
+
+        if method not in reasons:
+            print(f"{lrd}[{rd}!{lrd}] Invalid method selected.")
+            return
+
+        reason = reasons[method]
+
+        for i in range(count):
+            await client(functions.account.ReportPeerRequest(
+                peer=peer,
+                reason=reason,
+                message="Reported by script."
             ))
-                    print (f"{lrd}[{lgn}+{lrd}] {gn}A spam report has been sent : {i}")
+            print(f"{lgn}[+]{lrd} Report {i + 1} sent.")
 
-            elif self.method == "2":
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonPornography(),
-        message=''
-    ))
-                    print (f"{lrd}[{lgn}+{lrd}] {gn}A Pornogaphy report has been sent : {i}")
-                    
-            elif self.method == "3":
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonViolence(),
-        message=''
-    ))
-                    print (f"\n{lrd}[{lgn}+{lrd}] {gn}A Violence report has been sent : {i}")                                        
-            elif self.method == "4":
-            	report_message = 'This user is suspected of child abuse'
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonChildAbuse(),
-        message=report_message
-    ))
-                    print (f"\n{lrd}[{lgn}+{lrd}] {gn}A Child Abuse report has been sent : {i}")                                        
-            elif self.method == "5":
-            	message = input(f"{lrd}[{lgn}?{lrd}] {gn}Enter the report message : {k}")
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonOther(),
-        message=message
-    ))
-                    print (f"\n{lrd}[{lgn}+{lrd}] {gn}A Other report has been sent : {i}")                                                
-                    
-            elif self.method == "6":
-            	report_message = 'This user is suspected of Copyright'
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonCopyright(),
-        message=report_message
-    )) 
-                    print (f"\n{lrd}[{lgn}+{lrd}] {gn}A CopyRight report has been sent : {i}")           
-            elif self.method == "7":
-            	report_message = 'This user is suspected of fake'
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonFake(),
-        message=report_message
-    ))
-                    print (f"\n{lrd}[{lgn}+{lrd}] {gn}A Fake report has been sent : {i}")                                                                                                                                                                                                                                                                                                                                                                                                  
-            elif self.method == "8":
-            	report_message = 'This user is suspected of Geo Irrelevant'
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonGeoIrrelevant(),
-        message=report_message
-    )) 
-                    print (f"\n{lrd}[{lgn}+{lrd}] {gn}A Geo Irrelevant report has been sent : {i}")                                                                                                                                                                                                                                                                                                                                                                                       
-            elif self.method == "9":
-            	report_message = 'This user is suspected of Illegal Drugs'
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonIllegalDrugs(),
-        message=report_message
-    ))                           
-                    print (f"\n{lrd}[{lgn}+{lrd}] {gn}A Illegal Drugs report has been sent : {i}")                                      
-            elif self.method == "10":
-            	report_message = 'This user is suspected of Personal Details'
-            	for i in range(0,int(self.number)):
-                    client(functions.account.ReportPeerRequest(
-        peer=scammer_input_peer,
-        reason=types.InputReportReasonPersonalDetails(),
-        message=report_message
-    ))   
-                    print (f"\n{lrd}[{lgn}+{lrd}] {gn}A Personal Details report has been sent : {i}")                                                                                                                        
-            client.disconnect()
+            # Wait 30-60 seconds between each to avoid bans
+            await asyncio.sleep(30)
 
-        print(f'\n\n{lrd}[{rd}-{lrd}] {k}Your reports are finished !')
+        print(f"\n{lrd}[{lgn}✓{lrd}] {gn}Finished sending {count} reports.")
 
-reporter = TelegramReporter()
-reporter.report_spam()
+    except errors.PhoneNumberBannedError:
+        print(f"{lrd}[{rd}X{lrd}] {k}This phone number is banned from using Telegram API.")
+    except Exception as e:
+        print(f"{lrd}[{rd}ERROR{lrd}] {k}{str(e)}")
+    finally:
+        await client.disconnect()
+
+# Run the async main
+asyncio.run(main())
